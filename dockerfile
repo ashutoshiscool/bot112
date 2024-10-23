@@ -1,22 +1,12 @@
-FROM ubuntu:jammy
+FROM ubuntu:22.04
 
-RUN apt update && apt upgrade -y
+RUN apt-get update
+RUN apt-get install -y tmate openssh-server openssh-client
+RUN sed -i 's/^#\?\s*PermitRootLogin\s\+.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN echo 'root:root' | chpasswd
+RUN printf '#!/bin/sh\nexit 0' > /usr/sbin/policy-rc.d
+RUN apt-get install -y systemd systemd-sysv dbus dbus-user-session
+RUN printf "systemctl start systemd-logind" >> /etc/profile
 
-COPY . /etc
-COPY ./motd /etc
-
-RUN apt autoremove -y
-WORKDIR /root
-
-RUN apt install python3 neofetch nano iproute2 curl wget git make systemd -y
-RUN apt install openssh-server -y
-
-RUN curl -o /bin/systemctl https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/master/files/docker/systemctl3.py
-RUN chmod 775 /bin/systemctl
-
-RUN sed -i 's/#Port 22/Port 22/g' /etc/ssh/sshd_config
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
-
-RUN echo 'root:123456' | chpasswd
-RUN systemctl start sshd
-CMD [ "/usr/sbin/sshd" , "-D" ]
+CMD ["bash"]
+ENTRYPOINT ["/sbin/init"]
